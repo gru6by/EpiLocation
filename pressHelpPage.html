@@ -59,6 +59,15 @@
     </style>
 </head>
 <body>
+    <script>
+        let lat;
+        let long;
+        function receiveVar(){
+            const lat = localStorage.getItem('lat');
+            const long = localStorage.getItem('long');
+            }
+        receiveVar();
+    </script>
     <!-- Left sidebar with images -->
     <div class="sidebar">
         <h2>How to use an EpiPen?</h2>
@@ -82,7 +91,7 @@
         let routingControl = null;
         let facilities = [];
         let facilityMarkers = [];
-        
+
         // Custom markers
         const blueIcon = L.icon({
             iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
@@ -116,7 +125,7 @@
         // Load facilities from TXT file
         async function loadFacilitiesFromFile() {
             try {
-                const response = await fetch('facilities.txt');
+                const response = await fetch('');
                 const text = await response.text();
                 
                 const lines = text.split('\n').filter(line => 
@@ -136,7 +145,7 @@
                 getUserLocation();
                 
             } catch (error) {
-                console.error('Error loading facilities file:', error);
+                //console.error('Error loading facilities file:', error);
                 useFallbackFacilities();
             }
         }
@@ -270,6 +279,8 @@
         
         // Initialize the map
         initMap();
+
+
     </script>
 </body>
 </html>

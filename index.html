@@ -87,16 +87,17 @@
 
         <div class="overlay">
             <!-- Geo-Targeting Feature -->
-            <button class="help-button" onclick="recordLocation()">
+            <button autofocus class="help-button" onclick="recordLocation();">
                 PRESS FOR HELP
             </button>
         </div>
         <div class="footer-links">
+            <!-- add backing option to these foot links -->
             <a href="/how-to-use-epipen">How do I use an Epipen?</a>
-            <a href="/about">About</a>
-            <a href="/story">Story</a>
-            <a href="/support">Support</a>
-            <a href="/contact">Contact</a>
+            <a href="/aboutPage.html" Title="About Page">About</a>
+            <a href="/storyPage.html" Title="Title Page">Story</a>
+            <a href="/supportPage.html" Title="Support Page">Support</a>
+            <a href="/contactPage.html" Title="Contact Page">Contact</a>
         </div>
     </div>
 
@@ -108,6 +109,11 @@
 
         function success(position){
             console.log(`${position.coords.latitude}, ${position.coords.longitude}`);
+            var lat = position.coords.latitude;
+            var long = position.coords.longitude;
+            localStorage.setItem('long',long);
+            localStorage.setItem('lat',lat);
+            window.location.href = "pressHelpPage.html";
         }
 
         function fail(){
