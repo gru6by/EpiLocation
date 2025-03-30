@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EpiPen Locator</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left sidebar with images */
+        .sidebar {
+            width: 25%;
+            background-color: #f8f9fa;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+        
+        .sidebar img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* Map container */
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .custom-popup .leaflet-popup-content {
+            margin: 13px 19px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Left sidebar with images -->
+    <div class="sidebar">
+        <img src="./images/1_step.png" alt="Step 1">
+        <img src="./images/2_step.png" alt="Step 2">
+        <img src="./images/3_step.png" alt="Step 3">
+    </div>
+    
+    <!-- Map container -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
+    <!-- JavaScript for Map -->
+    <script>
+        let map;
+        let userMarker = null;
+        let routingControl = null;
+
+        // Custom markers
+        const blueIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        const redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([38.0325, -78.5097], 16);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            loadFacilitiesFromFile();
+        }
+
+        // Load facilities from TXT file
+        async function loadFacilitiesFromFile() {
+            try {
+                const response = await fetch('facilities.txt');
+                const text = await response.text();
+
+                const lines = text.split('\n').filter(line => 
+                    line.trim() && !line.startsWith('#')
+                );
+
+                facilities = lines.map(line => {
+                    const parts = line.split(',');
+                    return {
+                        lat: parseFloat(parts[0]),
+                        lng: parseFloat(parts[1]),
+                        type: parts[2] || 'EpiPen'
+                    };
+                });
+
+                addFacilityMarkers();
+                getUserLocation();
+
+            } catch (error) {
+                console.error('Error loading facilities file:', error);
+                useFallbackFacilities();
+            }
+        }
+
+        // Fallback with sample data if file loading fails
+        function useFallbackFacilities() {
+           
+           // Same as previous implementation
+       }
+
+       initMap();
+   </script>
+</body>
+</html>

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EpiPen Locator</title>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left sidebar with images */
+        .sidebar {
+            width: 25%;
+            background-color: #f8f9fa;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+        }
+        
+        .sidebar img {
+            width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        /* Map container */
+        .map-container {
+            flex: 1;
+            position: relative;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+        }
+        
+        .custom-popup .leaflet-popup-content {
+            margin: 13px 19px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Left sidebar with images -->
+    <div class="sidebar">
+        <h2>How to use an EpiPen?</h2>
+        <img src="images/1_step.png">
+        <img src="images/2_step.png">
+        <img src="images/3_step.png">
+    </div>
+    
+    <!-- Map container -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    
+    <script>
+        let map;
+        let userMarker = null;
+        let routingControl = null;
+        let facilities = [];
+        let facilityMarkers = [];
+        
+        // Custom markers
+        const blueIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        const redIcon = L.icon({
+            iconUrl: 'https://cdn.rawgit.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+            iconSize: [25, 41],
+            iconAnchor: [12, 41],
+            popupAnchor: [1, -34],
+            shadowSize: [41, 41]
+        });
+        
+        // Initialize map
+        function initMap() {
+            map = L.map('map').setView([38.0325, -78.5097], 16);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            
+            loadFacilitiesFromFile();
+        }
+        
+        // Load facilities from TXT file
+        async function loadFacilitiesFromFile() {
+            try {
+                const response = await fetch('facilities.txt');
+                const text = await response.text();
+                
+                const lines = text.split('\n').filter(line => 
+                    line.trim() && !line.startsWith('#')
+                );
+                
+                facilities = lines.map(line => {
+                    const parts = line.split(',');
+                    return {
+                        lat: parseFloat(parts[0]),
+                        lng: parseFloat(parts[1]),
+                        type: parts[2] || 'EpiPen'
+                    };
+                });
+                
+                addFacilityMarkers();
+                getUserLocation();
+                
+            } catch (error) {
+                console.error('Error loading facilities file:', error);
+                useFallbackFacilities();
+            }
+        }
+        
+        // Fallback with sample data if file loading fails
+        function useFallbackFacilities() {
+            facilities = [
+                { lat: 38.0315, lng: -78.4985, type: 'EpiPen' },
+                { lat: 38.0325, lng: -78.5097, type: 'EpiPen' },
+                { lat: 38.0330, lng: -78.5100, type: 'EpiPen' },
+                { lat: 38.0315, lng: -78.5085, type: 'EpiPen' }
+            ];
+            
+            addFacilityMarkers();
+            getUserLocation();
+        }
+        
+        // Add markers for all facilities
+        function addFacilityMarkers() {
+            facilities.forEach(facility => {
+                const marker = L.marker([facility.lat, facility.lng], {icon: blueIcon})
+                    .bindPopup(`<b>${facility.type} Location</b><br>Available here`, {
+                        className: 'custom-popup'
+                    })
+                    .addTo(map);
+                facilityMarkers.push(marker);
+            });
+        }
+        
+        // Get user location
+        function getUserLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Add user marker
+                        userMarker = L.marker([userLat, userLng], {icon: redIcon})
+                            .bindPopup("Your Location")
+                            .addTo(map);
+                        
+                        // Find nearest facility
+                        findNearestFacility(L.latLng(userLat, userLng));
+                    },
+                    function(error) {
+                        console.error("Geolocation error:", error.message);
+                        
+                        // Allow clicking on map to set location if geolocation fails
+                        map.on('click', e => {
+                            if (userMarker) {
+                                userMarker.setLatLng(e.latlng);
+                            } else {
+                                userMarker = L.marker(e.latlng, {icon: redIcon})
+                                    .bindPopup("Your Location")
+                                    .addTo(map);
+                            }
+                            
+                            findNearestFacility(e.latlng);
+                        });
+                    }
+                );
+            } else {
+                // Geolocation not supported
+                alert("Your browser does not support geolocation. Click on the map to set your position.");
+                
+                map.on('click', e => {
+                    if (userMarker) {
+                        userMarker.setLatLng(e.latlng);
+                    } else {
+                        userMarker = L.marker(e.latlng, {icon: redIcon})
+                            .bindPopup("Your Location")
+                            .addTo(map);
+                    }
+                    
+                    findNearestFacility(e.latlng);
+                });
+            }
+        }
+        
+        // Find nearest facility and route to it
+        function findNearestFacility(userLoc) {
+            if (facilities.length === 0) return;
+            
+            let nearestIndex = 0;
+            let minDistance = Infinity;
+            
+            facilities.forEach((facility, index) => {
+                const facilityLatLng = L.latLng(facility.lat, facility.lng);
+                const distance = userLoc.distanceTo(facilityLatLng);
+                
+                if (distance < minDistance) {
+                    minDistance = distance;
+                    nearestIndex = index;
+                }
+            });
+            
+            // Get nearest facility
+            const nearest = facilities[nearestIndex];
+            
+            // Show route
+            routeToFacility(userLoc, L.latLng(nearest.lat, nearest.lng), nearestIndex);
+        }
+        
+        // Create route to facility
+        function routeToFacility(userLoc, facilityLoc, facilityIndex) {
+            // Remove existing route
+            if (routingControl) {
+                map.removeControl(routingControl);
+            }
+            
+            // Create new route
+            routingControl = L.Routing.control({
+                waypoints: [userLoc, facilityLoc],
+                routeWhileDragging: false,
+                showAlternatives: false,
+                fitSelectedRoutes: false,
+                lineOptions: {
+                    styles: [{color: 'blue', opacity: 0.8, weight: 6}]
+                },
+                createMarker: function() { return null; } // Don't create extra markers
+            }).addTo(map);
+            
+            // Open popup for nearest facility
+            facilityMarkers[facilityIndex].openPopup();
+            
+            // Fit map to show both points
+            const bounds = L.latLngBounds([userLoc, facilityLoc]);
+            map.fitBounds(bounds, {padding: [50, 50]});
+        }
+        
+        // Initialize the map
+        initMap();
+    </script>
+</body>
+</html>
