@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Epilocation - Emergency Help</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .background {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background-image: url("images/snazzy-image.png"); 
+            background-size: cover;
+            background-position: center;
+        }
+
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .help-button {
+            background-color: red;
+            color: white;
+            padding: 20px 40px;
+            font-size: 84px;
+            font-weight: bold;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .footer-links {
+            position: absolute;
+            bottom: 70px;
+            width: 100%;
+            text-align: center;
+            align-content: space-evenly
+        }
+
+        .footer-links a {
+            margin: 30px;
+            color: black;
+            text-decoration: Edge 12;
+            font-size: 30px;
+            align-content: space-evenly
+        }
+
+        /* Accessibility Features */
+        .help-button:hover {
+            background-color: darkred; /* High contrast for better visibility */
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .help-button {
+                font-size: 18px; /* Adjust button size for smaller screens */
+                padding: 15px 30px;
+                border-radius: 8px;
+            }
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: -2;  /* Make sure it's behind the button and icon */
+        }
+    </style>
+</head>
+<body>
+    <div class="background">
+        <div id="map"></div> <!-- Google Map Container -->
+
+        <div class="overlay">
+            <!-- Geo-Targeting Feature -->
+            <button class="help-button" onclick="recordLocation()">
+                PRESS FOR HELP
+            </button>
+        </div>
+        <div class="footer-links">
+            <a href="/how-to-use-epipen">How do I use an Epipen?</a>
+            <a href="/about">About</a>
+            <a href="/story">Story</a>
+            <a href="/support">Support</a>
+            <a href="/contact">Contact</a>
+        </div>
+    </div>
+
+    <!-- Geo-Targeting Script -->
+    <script>
+        function recordLocation(){
+            navigator.geolocation.getCurrentPosition(success, fail);
+        }
+
+        function success(position){
+            console.log(`${position.coords.latitude}, ${position.coords.longitude}`);
+        }
+
+        function fail(){
+            alert(`Position was not found.`);
+        }
+    </script>
+
+    <!-- Replace YOUR_API_KEY with your actual API key -->
+</body>
+</html>
